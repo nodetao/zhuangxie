@@ -60,7 +60,7 @@ include 'includes/header.php';
     .compact-form .btn-primary {
         background-color: #4e73df;
         border-color: #4e73df;
-        padding: 8px 20px;
+        padding: 8px 15px; /* 减少内边距 */
         font-weight: 600;
         border-radius: 4px;
         transition: all 0.3s;
@@ -103,6 +103,28 @@ include 'includes/header.php';
     .form-row > [class*="col-"] {
         padding-right: 5px;
         padding-left: 5px;
+    }
+    
+    /* 按钮容器优化 */
+    .button-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        height: 100%;
+    }
+    
+    /* 按钮优化 */
+    .submit-btn {
+        margin-top: 25px;
+        padding: 8px 15px; /* 减少内边距 */
+        font-size: 0.9rem; /* 减小字体大小 */
+        width: auto; /* 自动宽度 */
+        max-width: 150px; /* 最大宽度限制 */
+    }
+    
+    /* 按钮内图标调整 */
+    .submit-btn i {
+        margin-right: 5px; /* 减小图标间距 */
     }
 </style>
 
@@ -148,9 +170,9 @@ include 'includes/header.php';
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="form-group col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary btn-block">
-                        <i class="fas fa-save mr-2"></i> 提交登记
+                <div class="form-group col-md-4 button-container">
+                    <button type="submit" class="btn btn-primary submit-btn">
+                        <i class="fas fa-save"></i> 提交
                     </button>
                 </div>
             </div>
