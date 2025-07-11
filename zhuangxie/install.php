@@ -1,5 +1,5 @@
 <?php
-// 启用错误报告（安装完成后应关闭）
+// 启用错误报告
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -45,24 +45,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
         $pdo->exec("USE `{$dbName}`");
 
-        // 导入SQL文件
-        $sqlFile = __DIR__ . '/sql.sql';
-        if (!file_exists($sqlFile)) {
-            throw new Exception("SQL文件不存在：{$sqlFile}");
+        // 生成SQL文件内容（不包含CREATE DATABASE语句）
+        $sqlContent = <<<SQL
+-- 品类表
+CREATE TABLE IF NOT EXISTS `categories` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 工人表
+CREATE TABLE IF NOT EXISTS `workers` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 用户表
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` enum('admin','user') NOT NULL DEFAULT 'user',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 记录表
+CREATE TABLE IF NOT EXISTS `records` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `record_date` date NOT NULL,
+  `worker_id` int(11) NOT NULL,
+  `category_id` int(11) NOT NULL,
+  `quantity` int(11) NOT NULL,
+  `total_price` decimal(10,2) NOT NULL,
+  `recorded_by` int(11) NOT NULL,
+  `product_name` varchar(255) NOT NULL COMMENT '商品名称',
+  PRIMARY KEY (`id`),
+  KEY `worker_id` (`worker_id`),
+  KEY `category_id` (`category_id`),
+  KEY `recorded_by` (`recorded_by`),
+  CONSTRAINT `records_ibfk_1` FOREIGN KEY (`worker_id`) REFERENCES `workers` (`id`),
+  CONSTRAINT `records_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`),
+  CONSTRAINT `records_ibfk_3` FOREIGN KEY (`recorded_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+SQL;
+
+        // 创建SQL文件
+        if (file_put_contents('sql.sql', $sqlContent) === false) {
+            throw new Exception("无法创建SQL文件，请检查目录写入权限");
         }
 
-        $sql = file_get_contents($sqlFile);
-        if ($sql === false) {
-            throw new Exception("无法读取SQL文件");
-        }
-        $pdo->exec($sql);
+        // 执行SQL文件
+        $pdo->exec($sqlContent);
 
-        // 创建管理员账户（密码哈希加密）
+        // 创建管理员账户
         $hashedPassword = password_hash($adminPass, PASSWORD_DEFAULT);
         $stmt = $pdo->prepare("INSERT INTO `users` (`username`, `password`, `role`) VALUES (?, ?, 'admin')");
         $stmt->execute([$adminUser, $hashedPassword]);
 
-        // 生成db.php配置文件（严格使用用户输入）
+        // 生成db.php配置文件
         $dbConfig = <<<PHP
 <?php
 \$host = '{$dbHost}';
@@ -86,7 +129,6 @@ PHP;
         $success = true;
     } catch (Exception $e) {
         $error = "安装失败: " . $e->getMessage();
-        // 记录详细错误日志
         file_put_contents('install_error.log', date('[Y-m-d H:i:s] ') . $e->getMessage() . PHP_EOL, FILE_APPEND);
     }
 }
@@ -103,8 +145,7 @@ PHP;
         h1 { text-align: center; color: #333; margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
-        input[type="text"], 
-        input[type="password"] {
+        input[type="text"], input[type="password"] {
             width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;
             box-sizing: border-box; font-size: 16px;
         }
@@ -116,7 +157,6 @@ PHP;
         .alert { padding: 10px; margin-bottom: 20px; border-radius: 4px; }
         .alert-error { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
         .alert-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-        .text-center { text-align: center; }
     </style>
 </head>
 <body>
@@ -145,7 +185,7 @@ PHP;
                 </div>
             </div>
         <?php else: ?>
-            <form method="post" onsubmit="return validateForm()">
+            <form method="post">
                 <h2>数据库配置</h2>
                 
                 <div class="form-group">
@@ -155,46 +195,35 @@ PHP;
                 
                 <div class="form-group">
                     <label for="db_name">数据库名称：</label>
-                    <input type="text" id="db_name" name="db_name" placeholder="请输入已创建的数据库名" required>
+                    <input type="text" id="db_name" name="db_name" placeholder="请输入要创建的数据库名称" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="db_user">数据库用户名：</label>
-                    <input type="text" id="db_user" name="db_user" placeholder="数据库用户名" required>
+                    <input type="text" id="db_user" name="db_user" placeholder="请输入数据库用户名" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="db_pass">数据库密码：</label>
-                    <input type="password" id="db_pass" name="db_pass" placeholder="数据库密码">
+                    <input type="password" id="db_pass" name="db_pass" placeholder="请输入数据库密码">
                 </div>
                 
                 <h2>管理员账户</h2>
                 
                 <div class="form-group">
                     <label for="admin_user">管理员用户名：</label>
-                    <input type="text" id="admin_user" name="admin_user" placeholder="用于登录系统的账号" required>
+                    <input type="text" id="admin_user" name="admin_user" placeholder="设置管理员账号" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="admin_pass">管理员密码：</label>
-                    <input type="password" id="admin_pass" name="admin_pass" placeholder="建议使用强密码" required>
+                    <input type="password" id="admin_pass" name="admin_pass" placeholder="设置管理员密码" required>
                 </div>
                 
                 <div class="form-group" style="margin-top: 25px;">
                     <button type="submit">开始安装</button>
                 </div>
             </form>
-            
-            <script>
-                function validateForm() {
-                    const dbName = document.getElementById('db_name').value.trim();
-                    if (dbName.includes(' ')) {
-                        alert('数据库名称不能包含空格');
-                        return false;
-                    }
-                    return true;
-                }
-            </script>
         <?php endif; ?>
     </div>
 </body>
