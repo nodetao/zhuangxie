@@ -137,7 +137,7 @@ include 'includes/header.php';
 
 <div class="container">
     <div class="form-container">
-        <h2>登记新装卸记录</h2>
+        <h2>新增记录</h2>
         <form method="post">
             <div class="form-group">
                 <label for="date">日期</label>
