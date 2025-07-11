@@ -1,9 +1,7 @@
--- 创建数据库（如果不存在）
-CREATE DATABASE IF NOT EXISTS `sql_zhuangxie` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-USE `sql_zhuangxie`;
+-- 注意：已移除创建数据库的语句，由安装程序动态创建
 
 -- 创建品类表
-CREATE TABLE `categories` (
+CREATE TABLE IF NOT EXISTS `categories` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
   `price` decimal(10,2) NOT NULL,
@@ -11,14 +9,14 @@ CREATE TABLE `categories` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 创建工人表
-CREATE TABLE `workers` (
+CREATE TABLE IF NOT EXISTS `workers` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 创建用户表
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(50) NOT NULL,
   `password` varchar(255) NOT NULL,
@@ -27,8 +25,8 @@ CREATE TABLE `users` (
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 创建记录表（已添加商品名称字段）
-CREATE TABLE `records` (
+-- 创建记录表
+CREATE TABLE IF NOT EXISTS `records` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `record_date` date NOT NULL,
   `worker_id` int(11) NOT NULL,
@@ -36,7 +34,7 @@ CREATE TABLE `records` (
   `quantity` int(11) NOT NULL,
   `total_price` decimal(10,2) NOT NULL,
   `recorded_by` int(11) NOT NULL,
-  `product_name` varchar(255) NOT NULL COMMENT '商品名称',  -- 新增字段
+  `product_name` varchar(255) NOT NULL COMMENT '商品名称',
   PRIMARY KEY (`id`),
   KEY `worker_id` (`worker_id`),
   KEY `category_id` (`category_id`),
