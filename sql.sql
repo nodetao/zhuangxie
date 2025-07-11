@@ -27,7 +27,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 创建记录表
+-- 创建记录表（已添加商品名称字段）
 CREATE TABLE `records` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `record_date` date NOT NULL,
@@ -36,6 +36,7 @@ CREATE TABLE `records` (
   `quantity` int(11) NOT NULL,
   `total_price` decimal(10,2) NOT NULL,
   `recorded_by` int(11) NOT NULL,
+  `product_name` varchar(255) NOT NULL COMMENT '商品名称',  -- 新增字段
   PRIMARY KEY (`id`),
   KEY `worker_id` (`worker_id`),
   KEY `category_id` (`category_id`),
