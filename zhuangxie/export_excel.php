@@ -32,11 +32,11 @@ $headerStyle = [
 
 // 设置表头
 $sheet->setCellValue('A1', '日期')
-      ->setCellValue('B1', '装卸公司')
-      ->setCellValue('C1', '品类')
-      ->setCellValue('D1', '商品名称')
-      ->setCellValue('E1', '数量')
-      ->setCellValue('F1', '金额')
+      ->setCellValue('B1', '品类')
+      ->setCellValue('C1', '商品名称')
+      ->setCellValue('D1', '数量')
+      ->setCellValue('E1', '金额')
+      ->setCellValue('F1', '公司')
       ->setCellValue('G1', '登记人');
 
 // 应用表头样式
@@ -66,11 +66,11 @@ $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $row = 2;
 foreach ($records as $record) {
     $sheet->setCellValue('A'.$row, $record['record_date'])
-          ->setCellValue('B'.$row, $record['worker_name'])
-          ->setCellValue('C'.$row, $record['category_name'])
-          ->setCellValue('D'.$row, $record['product_name'])
-          ->setCellValue('E'.$row, $record['quantity'])
-          ->setCellValue('F'.$row, $record['total_price'])
+          ->setCellValue('B'.$row, $record['category_name'])
+          ->setCellValue('C'.$row, $record['product_name'])
+          ->setCellValue('D'.$row, $record['quantity'])
+          ->setCellValue('E'.$row, $record['total_price'])
+          ->setCellValue('F'.$row, $record['worker_name'])
           ->setCellValue('G'.$row, $record['recorded_by']);
     
     // 设置金额格式
@@ -90,7 +90,7 @@ foreach (range('A', 'G') as $column) {
 $sheet->freezePane('A2');
 
 // 设置文件名
-$filename = "装卸记录_" . $start_date . "_至_" . $end_date . ".xlsx";
+$filename = "装卸明细_" . $start_date . "_至_" . $end_date . ".xlsx";
 
 // 输出Excel文件
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
