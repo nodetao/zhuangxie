@@ -40,20 +40,87 @@ $breadcrumb = "费用登记";
 include 'includes/header.php';
 ?>
 
+<style>
+    /* 紧凑表单样式 */
+    .compact-form .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .compact-form .form-control {
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .compact-form .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .compact-form .btn-primary {
+        background-color: #4e73df;
+        border-color: #4e73df;
+        padding: 8px 20px;
+        font-weight: 600;
+        border-radius: 4px;
+        transition: all 0.3s;
+    }
+    
+    .compact-form .btn-primary:hover {
+        background-color: #2e59d9;
+        border-color: #2653d4;
+        transform: translateY(-2px);
+    }
+    
+    .compact-form label {
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #5a5c69;
+    }
+    
+    .card-header {
+        background-color: #4e73df;
+        color: white;
+        border-bottom: 1px solid #e3e6f0;
+    }
+    
+    .card-title {
+        font-weight: 700;
+        font-size: 1.25rem;
+    }
+    
+    .card {
+        border: 1px solid #e3e6f0;
+        border-radius: 0.35rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+    
+    .form-row {
+        margin-right: -5px;
+        margin-left: -5px;
+    }
+    
+    .form-row > [class*="col-"] {
+        padding-right: 5px;
+        padding-left: 5px;
+    }
+</style>
+
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">登记新装卸记录</h3>
     </div>
     <div class="card-body">
-        <form method="post">
+        <form method="post" class="compact-form">
+            <!-- 第一行：日期、品类、商品名称 -->
             <div class="form-row">
                 <div class="form-group col-md-4">
                     <label>日期</label>
-                    <input type="date" name="date" value="<?= date('Y-m-d') ?>" class="form-control" required>
+                    <input type="date" name="date" value="<?= date('Y-m-d') ?>" class="form-control form-control-sm" required>
                 </div>
                 <div class="form-group col-md-4">
                     <label>品类</label>
-                    <select name="category_id" class="form-control" required>
+                    <select name="category_id" class="form-control form-control-sm" required>
                         <?php foreach ($categories as $cat): ?>
                             <option value="<?= $cat['id'] ?>">
                                 <?= htmlspecialchars($cat['name']) ?> (¥<?= $cat['price'] ?>)
@@ -63,29 +130,29 @@ include 'includes/header.php';
                 </div>
                 <div class="form-group col-md-4">
                     <label>商品名称</label>
-                    <input type="text" name="product_name" class="form-control" required placeholder="请输入商品名称">
+                    <input type="text" name="product_name" class="form-control form-control-sm" required placeholder="请输入商品名称">
                 </div>
             </div>
-            </div>
+            
+            <!-- 第二行：数量、公司、提交按钮 -->
             <div class="form-row">
                 <div class="form-group col-md-4">
                     <label>数量</label>
-                    <input type="number" name="quantity" min="1" class="form-control" required>
+                    <input type="number" name="quantity" min="1" class="form-control form-control-sm" required>
                 </div>
-                <!-- 新增：商品名称字段 -->
                 <div class="form-group col-md-4">
                     <label>公司</label>
-                    <select name="worker_id" class="form-control" required>
+                    <select name="worker_id" class="form-control form-control-sm" required>
                         <?php foreach ($workers as $worker): ?>
                             <option value="<?= $worker['id'] ?>"><?= htmlspecialchars($worker['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-            </div>
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> 提交登记
-                </button>
+                <div class="form-group col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-save mr-2"></i> 提交登记
+                    </button>
+                </div>
             </div>
         </form>
     </div>
