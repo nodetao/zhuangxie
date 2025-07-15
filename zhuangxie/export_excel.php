@@ -1,76 +1,31 @@
 <?php
-require 'vendor/autoload.php';
 include 'includes/auth.php';
 include 'db.php';
-
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 if (!isLoggedIn()) {
     redirect('index.php');
 }
 
-// 获取查询参数
-$start_date = $_GET['start_date'] ?? date('Y-m-d', strtotime('-7 days')); // 起始日期筛选参数
-$end_date = $_GET['end_date'] ?? date('Y-m-d'); // 终止日期筛选参数
-$worker_id = $_GET['worker_id'] ?? ''; // 公司筛选参数
+// 设置默认日期范围
+$start_date = date('Y-m-d', strtotime('-7 days'));
+$end_date = date('Y-m-d');
+$selected_worker = ''; // 默认不选择公司
 
-// 创建新的Spreadsheet对象
-$spreadsheet = new Spreadsheet();
-$sheet = $spreadsheet->getActiveSheet();
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $start_date = $_POST['start_date'];
+    $end_date = $_POST['end_date'];
+    $selected_worker = $_POST['worker_id'] ?? ''; // 获取选择的公司ID
+}
 
-// 设置文档属性
-$spreadsheet->getProperties()
-    ->setCreator("装卸管理系统")
-    ->setTitle("费用明细表")
-    ->setSubject($start_date . "至" . $end_date . "卸货记录");
+// 获取所有公司列表
+$workers_sql = "SELECT id, name FROM workers";
+$workers = $pdo->query($workers_sql)->fetchAll(PDO::FETCH_ASSOC);
 
-// 设置表头样式
-$headerStyle = [
-    'font' => [
-        'bold' => true,
-        'color' => ['rgb' => 'FFFFFF'],
-        'size' => 12
-    ],
-    'fill' => [
-        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-        'startColor' => ['rgb' => '4CAF50']
-    ],
-    'alignment' => [
-        'horizontal' => Alignment::HORIZONTAL_CENTER,
-        'vertical' => Alignment::VERTICAL_CENTER
-    ]
-];
-
-// 设置标题
-$sheet->setCellValue('A1', '费用明细表 (' . $start_date . ' 至 ' . $end_date . ')');
-$sheet->mergeCells('A1:G1');
-$sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
-$sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-// 设置表头
-$sheet->setCellValue('A2', '日期')
-      ->setCellValue('B2', '品类')
-      ->setCellValue('C2', '商品名称')
-      ->setCellValue('D2', '数量')
-      ->setCellValue('E2', '金额')
-      ->setCellValue('F2', '公司名称')
-      ->setCellValue('G2', '登记人');
-
-// 应用表头样式
-$sheet->getStyle('A2:G2')->applyFromArray($headerStyle);
-
-// 查询数据 - 添加公司筛选条件
-$sql = "SELECT 
-            r.record_date,
-            w.name AS worker_name,
-            c.name AS category_name,
-            r.product_name,
-            r.quantity,
-            r.total_price,
-            u.username AS recorded_by
+// 构建查询语句
+$sql = "SELECT r.id, r.record_date, w.name AS worker_name, 
+               c.name AS category_name, r.quantity, 
+               r.total_price, u.username AS recorded_by,
+               r.product_name
         FROM records r
         JOIN workers w ON r.worker_id = w.id
         JOIN categories c ON r.category_id = c.id
@@ -79,10 +34,10 @@ $sql = "SELECT
 
 $params = [$start_date, $end_date];
 
-// 添加公司筛选条件
-if (!empty($worker_id)) {
+// 如果选择了特定公司，添加公司筛选条件
+if (!empty($selected_worker)) {
     $sql .= " AND r.worker_id = ?";
-    $params[] = $worker_id;
+    $params[] = $selected_worker;
 }
 
 $sql .= " ORDER BY r.record_date DESC";
@@ -91,80 +46,142 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 填充数据
-$row = 3;
-foreach ($records as $record) {
-    $sheet->setCellValue('A'.$row, $record['record_date'])
-          ->setCellValue('B'.$row, $record['category_name'])
-          ->setCellValue('C'.$row, $record['product_name'])
-          ->setCellValue('D'.$row, $record['quantity'])
-          ->setCellValue('E'.$row, $record['total_price'])
-          ->setCellValue('F'.$row, $record['worker_name'])
-          ->setCellValue('G'.$row, $record['recorded_by']);
-    
-    // 设置金额格式
-    $sheet->getStyle('E'.$row)
-          ->getNumberFormat()
-          ->setFormatCode('¥#,##0.00');
-    
-    $row++;
+$page_title = "装卸记录查询";
+$breadcrumb = "记录查询";
+include 'includes/header.php';
+?>
+
+<style>
+/* 添加固定列宽的CSS样式 */
+.fixed-width-table {
+    table-layout: fixed;
+    width: 100%;
 }
 
-// 设置自动列宽
-foreach (range('A', 'G') as $column) {
-    $sheet->getColumnDimension($column)->setAutoSize(true);
+.fixed-width-table th,
+.fixed-width-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-// 设置单元格样式
-$sheet->getStyle('D3:D'.($row-1))
-      ->getNumberFormat()
-      ->setFormatCode('#,##0');
-      
-$sheet->getStyle('A3:A'.($row-1))
-      ->getAlignment()
-      ->setHorizontal(Alignment::HORIZONTAL_CENTER);
-      
-$sheet->getStyle('D3:D'.($row-1))
-      ->getAlignment()
-      ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-      
-$sheet->getStyle('E3:E'.($row-1))
-      ->getAlignment()
-      ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+/* 固定列宽设置 */
+.col-date { width: 10%; }
+.col-product { width: 20%; }
+.col-category { width: 15%; }
+.col-worker { width: 20%; }
+.col-quantity { width: 10%; }
+.col-price { width: 15%; }
+.col-recorded-by { width: 10%; }
+.col-actions { width: 10%; }
+</style>
 
-// 添加边框
-$lastRow = $row - 1;
-$borderStyle = [
-    'borders' => [
-        'allBorders' => [
-            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-            'color' => ['rgb' => '000000']
-        ]
-    ]
-];
-$sheet->getStyle('A2:G'.$lastRow)->applyFromArray($borderStyle);
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">查询条件</h3>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            <div class="form-row">
+                <div class="form-group col-md-3">
+                    <label>开始日期</label>
+                    <input type="date" name="start_date" value="<?= $start_date ?>" class="form-control" required>
+                </div>
+                <div class="form-group col-md-3">
+                    <label>结束日期</label>
+                    <input type="date" name="end_date" value="<?= $end_date ?>" class="form-control" required>
+                </div>
+                <div class="form-group col-md-4">
+                    <label>公司</label>
+                    <select name="worker_id" class="form-control">
+                        <option value="">-- 所有公司 --</option>
+                        <?php foreach ($workers as $worker): ?>
+                            <option value="<?= $worker['id'] ?>" 
+                                <?= ($selected_worker == $worker['id']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($worker['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group col-md-2" style="align-self: flex-end;">
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-search"></i> 查询
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 
-// 设置冻结首行
-$sheet->freezePane('A3');
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title">查询结果</h3>
+        <div>
+            <a href="export_excel.php?start_date=<?= urlencode($start_date) ?>&end_date=<?= urlencode($end_date) ?>&worker_id=<?= urlencode($selected_worker) ?>" 
+               class="btn btn-excel">
+               <i class="fas fa-file-excel"></i> 导出Excel
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover fixed-width-table">
+                <colgroup>
+                    <col class="col-date">
+                    <col class="col-product">
+                    <col class="col-category">
+                    <col class="col-worker">
+                    <col class="col-quantity">
+                    <col class="col-price">
+                    <col class="col-recorded-by">
+                    <?php if (isAdmin()): ?>
+                        <col class="col-actions">
+                    <?php endif; ?>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>商品名称</th>
+                        <th>品类</th>
+                        <th>公司名称</th>
+                        <th>数量</th>
+                        <th>金额</th>
+                        <th>登记人</th>
+                        <?php if (isAdmin()): ?>
+                            <th>操作</th>
+                        <?php endif; ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($records as $record): ?>
+                    <tr>
+                        <td title="<?= $record['record_date'] ?>"><?= $record['record_date'] ?></td>
+                        <td title="<?= htmlspecialchars($record['product_name']) ?>"><?= htmlspecialchars($record['product_name']) ?></td>
+                        <td title="<?= htmlspecialchars($record['category_name']) ?>"><?= htmlspecialchars($record['category_name']) ?></td>
+                        <td title="<?= htmlspecialchars($record['worker_name']) ?>"><?= htmlspecialchars($record['worker_name']) ?></td>
+                        <td><?= $record['quantity'] ?></td>
+                        <td>¥<?= number_format($record['total_price'], 2) ?></td>
+                        <td title="<?= $record['recorded_by'] ?>"><?= $record['recorded_by'] ?></td>
+                        <?php if (isAdmin()): ?>
+                            <td class="action-buttons">
+                                <a href="edit_record.php?id=<?= $record['id'] ?>" 
+                                   class="btn-action btn-edit" title="编辑">
+                                   <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="delete_record.php?id=<?= $record['id'] ?>" 
+                                   class="btn-action btn-delete" 
+                                   title="删除"
+                                   onclick="return confirm('确定删除这条记录吗？')">
+                                   <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        <?php endif; ?>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-// 设置文件名
-$filename = "卸货明细_" . $start_date . "_至_" . $end_date;
-if (!empty($worker_id)) {
-    // 获取公司名称用于文件名
-    $worker_sql = "SELECT name FROM workers WHERE id = ?";
-    $worker_stmt = $pdo->prepare($worker_sql);
-    $worker_stmt->execute([$worker_id]);
-    $worker_name = $worker_stmt->fetchColumn();
-    $filename .= "_" . $worker_name;
-}
-$filename .= ".xlsx";
-
-// 输出Excel文件
-header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-header('Content-Disposition: attachment;filename="'. $filename .'"');
-header('Cache-Control: max-age=0');
-header('Access-Control-Allow-Origin: *');
-
-$writer = new Xlsx($spreadsheet);
-$writer->save('php://output');
-exit;
+<?php include 'includes/footer.php'; ?>
