@@ -13,7 +13,7 @@ if (!isLoggedIn()) {
 }
 
 // 获取查询参数
-$start_date = $_GET['start_date'] ?? date('Y-m-d', strtotime('-30 days')); // 起始日期筛选参数
+$start_date = $_GET['start_date'] ?? date('Y-m-d', strtotime('-7 days')); // 起始日期筛选参数
 $end_date = $_GET['end_date'] ?? date('Y-m-d'); // 终止日期筛选参数
 $worker_id = $_GET['worker_id'] ?? ''; // 公司筛选参数
 
