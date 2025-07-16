@@ -2,6 +2,12 @@
 include 'includes/auth.php';
 include 'db.php';
 
+// 新增：检查用户是否已登录
+if (isLoggedIn()) {
+    redirect('dashboard.php');
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
