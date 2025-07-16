@@ -1,472 +1,488 @@
 <?php
-if (!isset($_SESSION)) {
-    session_start();
+session_start();
+if (!isset($_SESSION['username'])) {
+    header("Location: login.php");
+    exit();
 }
+if (!isset($page_title)) $page_title = '后台系统';
 ?>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $page_title ?? '装卸管理系统'; ?></title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title><?= $page_title ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
     <style>
-        /* 基础样式重置 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Helvetica Neue', Arial, 'Microsoft YaHei', sans-serif;
+        html {
+            overflow-y: scroll;
         }
-        
+
+        * { box-sizing: border-box; }
         body {
-            background-color: #f8f9fa;
-            color: #495057;
-            line-height: 1.6;
-            font-size: 14px;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to right, #f4f9ff, #e9f0fb);
+            color: #333;
+            font-size: 14px; /* 全局字体大小 */
         }
-        
-        /* 侧边导航栏 */
-        .sidebar {
-            width: 220px;
-            background: #343a40;
-            min-height: 100vh;
-            position: fixed;
-            padding-top: 20px;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+
+        /* 表格字体调整 */
+        .table {
+            font-size: 13px;
         }
-        
-        .sidebar-header {
-            padding: 0 20px 20px;
-            border-bottom: 1px solid #4b545c;
-            margin-bottom: 15px;
-        }
-        
-        .sidebar-header h1 {
-            color: #fff;
-            font-size: 1.3rem;
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
-        
-        .user-info {
-            color: #adb5bd;
-            font-size: 0.85rem;
+
+        header {
+            background: #2f54eb;
+            color: white;
+            padding: 16px 30px;
             display: flex;
             align-items: center;
-        }
-        
-        .user-info i {
-            margin-right: 8px;
-        }
-        
-        /* 导航菜单 */
-        .sidebar-menu {
-            list-style: none;
-        }
-        
-        .sidebar-menu li {
-            margin-bottom: 3px;
-        }
-        
-        .sidebar-menu a {
-            display: flex;
-            align-items: center;
-            padding: 10px 20px;
-            color: #dee2e6;
-            text-decoration: none;
-            transition: all 0.3s;
-            font-size: 0.9rem;
-        }
-        
-        .sidebar-menu a i {
-            width: 20px;
-            margin-right: 10px;
-            text-align: center;
-            font-size: 0.95rem;
-        }
-        
-        .sidebar-menu a:hover {
-            background: #495057;
-            color: #fff;
-        }
-        
-        .sidebar-menu .active {
-            background: #495057;
-            color: #fff;
-            border-left: 3px solid #4e73df;
-        }
-        
-        /* 主内容区 */
-        .main-content {
-            margin-left: 220px;
-            padding: 25px;
-            background: #fff;
-            min-height: 100vh;
-        }
-        
-        /* 页面标题区 */
-        .page-header {
-            display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            height: 70px; /* 固定高度防止跳动 */
         }
-        
-        .page-header h2 {
-            color: #343a40;
-            font-size: 1.5rem;
+
+        .logo-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .nav-links a {
+            color: white;
+            margin-left: 24px;
+            text-decoration: none;
             font-weight: 500;
+            transition: color 0.2s ease;
         }
-        
-        .breadcrumb {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin-top: 5px;
+
+        .nav-links a:hover {
+            color: #cddfff;
         }
-        
-        .breadcrumb a {
-            color: #4e73df;
+
+        .container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        h2.page-title {
+            font-size: 22px;
+            margin-bottom: 20px;
+            border-left: 5px solid #2f54eb;
+            padding-left: 12px;
+            color: #2f54eb;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s ease;
             text-decoration: none;
         }
-        
-        .breadcrumb a:hover {
+
+        .btn i {
+            margin-right: 6px;
+        }
+
+        .btn-add {
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: linear-gradient(to right, #5a00c5, #1f63e0);
+        }
+
+        .btn-edit {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background-color: #d97706;
+        }
+
+        .btn-delete {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #dc2626;
+        }
+
+        .welcome {
+            font-size: 14px;
+            margin-left: 16px;
+        }
+
+        .logout-link {
+            color: #ffcccc;
+            text-decoration: none;
+            margin-left: 10px;
+            font-weight: 500;
+        }
+
+        .logout-link:hover {
             text-decoration: underline;
         }
-        
-        /* 消息提示 */
-        .alert {
-            padding: 12px 15px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-            font-size: 0.9rem;
+
+        .top-right {
+            display: flex;
+            align-items: center;
         }
         
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        /* 表格样式 */
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        /* 添加dashboard中的卡片样式 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
             margin-top: 20px;
-            font-size: 0.85rem;
-            box-shadow: 0 0 5px rgba(0,0,0,0.03);
         }
-        
-        table th {
-            background: #f8f9fa;
-            padding: 10px 12px;
-            text-align: left;
-            font-weight: 500;
-            color: #495057;
-            border-bottom: 2px solid #dee2e6;
-        }
-        
-        table td {
-            padding: 8px 12px;
-            border-top: 1px solid #dee2e6;
-        }
-        
-        table tr:hover {
-            background-color: #f8f9fa;
-        }
-        
-        /* 表单样式 */
-        .form-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #fff;
+
+        .dashboard-card {
+            background: linear-gradient(145deg, #f5f7fa, #e4eaf1);
             padding: 25px;
-            border-radius: 5px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.05);
+            border-radius: 20px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .dashboard-card h4 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .stat-number {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #4a00e0;
+            margin: 0;
+        }
+
+        .stat-label {
+            font-size: 0.95rem;
+            color: #777;
+        }
+        
+        /* 添加表格页面样式 */
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #eaeef5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+            color: #2f54eb;
+        }
+        
+        .card-body {
+            padding: 25px;
         }
         
         .form-row {
             display: flex;
+            flex-wrap: wrap;
             gap: 15px;
-            margin-bottom: 15px;
         }
         
         .form-group {
             flex: 1;
-            margin-bottom: 15px;
+            min-width: 200px;
         }
         
         .form-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
-            color: #495057;
-            font-size: 0.9rem;
+            color: #555;
         }
         
         .form-control {
             width: 100%;
-            height: 38px;
-            padding: 8px 12px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            transition: all 0.3s;
-        }
-        
-        .form-control:focus {
-            border-color: #80bdff;
-            outline: 0;
-            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
-        }
-        
-        /* 按钮样式 */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 8px 15px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            border: none;
-        }
-        
-        .btn i {
-            margin-right: 8px;
-            font-size: 0.9rem;
+            padding: 10px 14px;
+            border: 1px solid #d9d9d9;
+            border-radius: 8px;
+            font-size: 14px;
         }
         
         .btn-primary {
-            background-color: #4e73df;
+            background: linear-gradient(to right, #2f54eb, #1d39c4);
             color: white;
         }
         
         .btn-primary:hover {
-            background-color: #3a56c0;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background: linear-gradient(to right, #1d39c4, #2f54eb);
         }
         
         .btn-excel {
-            background-color: #1cc88a !important;
+            background: linear-gradient(to right, #0d9e4e, #0c8040);
             color: white;
         }
         
         .btn-excel:hover {
-            background-color: #17a673 !important;
-            transform: translateY(-1px);
+            background: linear-gradient(to right, #0c8040, #0d9e4e);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         
-        .btn-danger {
-            background-color: #e74a3b;
-            color: white;
+        .table-responsive {
+            overflow-x: auto;
         }
         
-        .btn-danger:hover {
-            background-color: #d52a1a;
-            transform: translateY(-1px);
+        .table {
+            width: 100%;
+            border-collapse: collapse;
         }
         
-        .btn-secondary {
-            background-color: #858796;
-            color: white;
+        .table th, .table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eaeef5;
         }
         
-        .btn-secondary:hover {
-            background-color: #6c757d;
-            transform: translateY(-1px);
+        .table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #333;
         }
         
-        /* 操作按钮组 */
+        .table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        
         .action-buttons {
             display: flex;
             gap: 8px;
         }
         
-        /* 圆形图标按钮 */
         .btn-action {
             width: 32px;
             height: 32px;
+            border-radius: 50%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 50%;
-            margin: 0 3px;
-            transition: all 0.3s;
+            font-size: 14px;
+            color: white;
+            text-decoration: none;
         }
         
         .btn-edit {
-            background-color: #4e73df;
-            color: white;
-        }
-        
-        .btn-edit:hover {
-            background-color: #3a56c0;
-            transform: scale(1.1);
+            background-color: #f59e0b;
         }
         
         .btn-delete {
-            background-color: #e74a3b;
-            color: white;
+            background-color: #ef4444;
         }
         
-        .btn-delete:hover {
-            background-color: #d52a1a;
-            transform: scale(1.1);
+        .mt-4 {
+            margin-top: 1.5rem;
         }
         
-        /* 卡片式布局 */
-        .card {
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+        /* ================= 新增样式 ================= */
+        /* 表格中公司名称列优化 */
+        .company-cell {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
-        
-        .card-header {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #e3e6f0;
-            padding: 15px 20px;
+
+        /* 自定义列宽 */
+        .form-group.col-date {
+            flex: 0 0 16.66667%; /* 约等于col-md-2 */
+            max-width: 16.66667%;
+        }
+
+        .form-group.col-company {
+            flex: 0 0 41.66667%; /* 约等于col-md-5 */
+            max-width: 41.66667%;
+        }
+
+        /* 按钮列样式 */
+        .form-group.col-button {
+            flex: 0 0 25%; /* 约等于col-md-3 */
+            max-width: 25%;
+            align-self: flex-end;
+        }
+
+        /* 响应式调整 - 小屏幕优化 */
+        @media (max-width: 768px) {
+            .form-group.col-date,
+            .form-group.col-company,
+            .form-group.col-button {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+            
+            .form-group.col-button {
+                margin-top: 15px;
+            }
+            
+            .wider-select {
+                min-width: 100%;
+            }
+        }
+
+        /* 操作按钮样式 */
+        .action-buttons {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .btn-action {
+            font-size: 13px;
+            padding: 5px 8px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .btn-action-edit {
+            color: #28a745;
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+
+        .btn-action-edit:hover {
+            background-color: rgba(40, 167, 69, 0.2);
+        }
+
+        .btn-action-delete {
+            color: #dc3545;
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+
+        .btn-action-delete:hover {
+            background-color: rgba(220, 53, 69, 0.2);
+        }
+
+        /* 分页样式 */
+        .pagination-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: 20px;
+            padding: 10px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .pagination-info {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .pagination-custom {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-custom .page-item {
+            display: inline-block;
+        }
+
+        .pagination-custom .page-link {
+            display: inline-block;
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            color: #4e73df;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .pagination-custom .page-link:hover {
+            background: #f5f7ff;
+            border-color: #c0c9f0;
+        }
+
+        .pagination-custom .page-item.disabled .page-link {
+            color: #aaa;
+            background: #f8f9fa;
+            cursor: not-allowed;
+        }
+
+        .pagination-custom .page-item.active .page-link {
+            background: #4e73df;
+            color: white;
+            border-color: #4e73df;
+            font-weight: 500;
+        }
+
+        .page-divider {
+            color: #666;
+            padding: 0 5px;
         }
         
-        .card-title {
-            margin-bottom: 0;
-            font-size: 1.1rem;
-            font-weight: 600;
+        /* 增加下拉框宽度和选项显示 */
+        .wider-select {
+            width: 100%;
+            min-width: 250px; /* 确保最小宽度 */
         }
-        
-        .card-body {
-            padding: 20px;
-        }
-        
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                position: relative;
-                min-height: auto;
-            }
-            .main-content {
-                margin-left: 0;
-                padding: 15px;
-            }
-            .form-row {
-                flex-direction: column;
-                gap: 0;
-            }
-            body {
-                font-size: 13px;
-            }
-            .page-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .page-header .btn {
-                margin-top: 10px;
-                align-self: flex-end;
-            }
+
+        /* 确保下拉选项完整显示 */
+        .wider-select option {
+            white-space: normal; /* 允许多行显示 */
+            padding: 8px 12px;  /* 增加内边距 */
         }
     </style>
 </head>
 <body>
-    <!-- 左侧边栏 -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h1>装卸管理系统</h1>
-            <div class="user-info">
-                <i class="fas fa-user-circle"></i>
-                <?php echo $_SESSION['username']; ?> 
-                <span style="color: #adb5bd;">(<?php echo $_SESSION['role'] == 'admin' ? '管理员' : '用户'; ?>)</span>
-            </div>
+
+<header>
+    <div class="logo-title">后台管理系统</div>
+    <div class="top-right">
+        <nav class="nav-links">
+            <a href="dashboard.php">首页</a>
+            <a href="add_record.php">添加记录</a>
+            <a href="view_records.php">查看记录</a>
+            <a href="manage_users.php">用户管理</a>
+            <a href="manage_workers.php">公司管理</a>
+            <a href="manage_categories.php">品类管理</a>
+        </nav>
+        <div class="welcome">
+            欢迎您，<?= $_SESSION['username'] ?>
+            <a href="logout.php" class="logout-link"><i class="fas fa-sign-out-alt"></i> 退出</a>
         </div>
-        
-        <ul class="sidebar-menu">
-            <li>
-                <a href="dashboard.php" <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'class="active"' : ''; ?>>
-                    <i class="fas fa-tachometer-alt"></i>控制面板
-                </a>
-            </li>
-            
-            <?php if ($_SESSION['role'] == 'admin'): ?>
-                <li>
-                    <a href="manage_categories.php" <?php echo basename($_SERVER['PHP_SELF']) == 'manage_categories.php' ? 'class="active"' : ''; ?>>
-                        <i class="fas fa-tags"></i>品类管理
-                    </a>
-                </li>
-                <li>
-                    <a href="manage_workers.php" <?php echo basename($_SERVER['PHP_SELF']) == 'manage_workers.php' ? 'class="active"' : ''; ?>>
-                        <i class="fas fa-users-cog"></i>公司管理
-                    </a>
-                </li>
-                <li>
-                    <a href="manage_users.php" <?php echo basename($_SERVER['PHP_SELF']) == 'manage_users.php' ? 'class="active"' : ''; ?>>
-                        <i class="fas fa-user-shield"></i>用户管理
-                    </a>
-                </li>
-            <?php endif; ?>
-            
-            <li>
-                <a href="add_record.php" <?php echo basename($_SERVER['PHP_SELF']) == 'add_record.php' ? 'class="active"' : ''; ?>>
-                    <i class="fas fa-clipboard-list"></i>登记费用
-                </a>
-            </li>
-            <li>
-                <a href="view_records.php" <?php echo basename($_SERVER['PHP_SELF']) == 'view_records.php' ? 'class="active"' : ''; ?>>
-                    <i class="fas fa-search"></i>查询记录
-                </a>
-            </li>
-            
-            <li style="margin-top: 20px; border-top: 1px solid #4b545c; padding-top: 10px;">
-                <a href="logout.php">
-                    <i class="fas fa-sign-out-alt"></i>退出系统
-                </a>
-            </li>
-        </ul>
     </div>
-    
-    <!-- 主内容区域 -->
-    <div class="main-content">
-        <div class="page-header">
-            <div>
-                <h2><?php echo $page_title ?? '装卸管理系统'; ?></h2>
-                <div class="breadcrumb">
-                    <a href="dashboard.php"><i class="fas fa-home"></i> 首页</a> 
-                    <?php if (isset($breadcrumb)): ?>
-                        &rsaquo; <?php echo $breadcrumb; ?>
-                    <?php endif; ?>
-                </div>
-            </div>
-            
-            <?php if (basename($_SERVER['PHP_SELF']) != 'dashboard.php'): ?>
-                <a href="dashboard.php" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> 返回
-                </a>
-            <?php endif; ?>
-        </div>
-        
-        <!-- 消息提示 -->
-        <?php if (function_exists('displayMessages')) displayMessages(); ?>
-<script>
-// 增强型删除确认
-function confirmDelete(item, recordsCount) {
-    if (recordsCount > 0) {
-        return confirm(`警告：将删除该${item}及其${recordsCount}条关联记录！\n\n此操作不可撤销，您确定要继续吗？`);
-    }
-    return confirm(`确定删除该${item}吗？`);
-}
-</script>
+</header>
+
+<!-- 页面内容容器开始 -->
+<div class="container">
