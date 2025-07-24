@@ -2,10 +2,12 @@
 include 'includes/auth.php';
 include 'db.php';
 
-if (!isAdmin()) {
+if (!checkSessionTimeout() || !isAdmin()) {
     $_SESSION['error'] = "无权访问此页面";
     redirect('dashboard.php');
 }
+
+refreshSession();
 
 $user_id = $_GET['id'] ?? 0;
 
