@@ -1,10 +1,74 @@
 <?php
+// ==================== 会话安全设置 ====================
+// 3天有效期（秒）
+$session_duration = 259200; // 60*60*24*3
+
+// 设置会话参数
+ini_set('session.gc_maxlifetime', $session_duration);  // 服务器端会话有效期
+ini_set('session.cookie_lifetime', $session_duration); // 浏览器Cookie有效期
+
+// 降低垃圾回收概率（减少会话被提前清理的机会）
+ini_set('session.gc_probability', 1);
+ini_set('session.gc_divisor', 1000);  // 0.1%的概率触发GC
+
+// 自定义会话存储路径（避免共享主机清理）
+$customSessionPath = __DIR__ . '/sessions';
+if (!is_dir($customSessionPath)) {
+    mkdir($customSessionPath, 0700, true);
+}
+ini_set('session.save_path', $customSessionPath);
+
+// 增强会话安全设置
+ini_set('session.cookie_secure', true);    // 仅通过HTTPS传输
+ini_set('session.cookie_httponly', true);  // 禁止JavaScript访问
+ini_set('session.cookie_samesite', 'Lax'); // 防止CSRF攻击
+ini_set('session.use_strict_mode', true);  // 防止会话固定攻击
+
+// 启动会话
 session_start();
+
+// 检查会话是否过期（3天无活动）
+if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $session_duration)) {
+    // 会话过期，销毁会话并重定向
+    session_unset();
+    session_destroy();
+    
+    // 清除会话cookie
+    $params = session_get_cookie_params();
+    setcookie(
+        session_name(),
+        '',
+        time() - 42000,
+        $params["path"],
+        $params["domain"],
+        $params["secure"],
+        $params["httponly"]
+    );
+    
+    header("Location: login.php?expired=1");
+    exit();
+}
+
+// 更新最后活动时间
+$_SESSION['last_activity'] = time();
+
+// 定期更新会话ID（每24小时）
+if (!isset($_SESSION['created'])) {
+    $_SESSION['created'] = time();
+} elseif (time() - $_SESSION['created'] > 86400) { // 24小时
+    session_regenerate_id(true);
+    $_SESSION['created'] = time();
+}
+
+// 检查用户是否已登录
 if (!isset($_SESSION['username'])) {
     header("Location: login.php");
     exit();
 }
 if (!isset($page_title)) $page_title = '后台系统';
+
+// 检查用户是否为管理员
+$isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
 ?>
 <!DOCTYPE html>
 <html lang="zh">
@@ -463,6 +527,32 @@ if (!isset($page_title)) $page_title = '后台系统';
             padding: 8px 12px;  /* 增加内边距 */
         }
     </style>
+    
+    <!-- 添加会话保持脚本 -->
+    <script>
+        // 每5分钟发送一次心跳请求（300000毫秒）
+        document.addEventListener('DOMContentLoaded', function() {
+            function keepSessionAlive() {
+                fetch('/session-keepalive.php', {
+                    method: 'HEAD',
+                    credentials: 'include' // 包含cookie
+                }).catch(error => {
+                    console.error('心跳请求失败:', error);
+                });
+            }
+            
+            // 初始发送一次
+            keepSessionAlive();
+            
+            // 设置定时器
+            setInterval(keepSessionAlive, 300000); // 5分钟
+            
+            // 用户活动时也发送心跳（鼠标移动、点击、键盘输入）
+            ['mousemove', 'keydown', 'click', 'scroll'].forEach(event => {
+                window.addEventListener(event, keepSessionAlive, { passive: true });
+            });
+        });
+    </script>
 </head>
 <body>
 
@@ -473,12 +563,14 @@ if (!isset($page_title)) $page_title = '后台系统';
             <a href="dashboard.php">首页</a>
             <a href="add_record.php">添加记录</a>
             <a href="view_records.php">查看记录</a>
-            <a href="manage_users.php">用户管理</a>
-            <a href="manage_workers.php">公司管理</a>
-            <a href="manage_categories.php">品类管理</a>
+            <?php if ($isAdmin): ?>
+                <a href="manage_users.php">用户管理</a>
+                <a href="manage_workers.php">公司管理</a>
+                <a href="manage_categories.php">品类管理</a>
+            <?php endif; ?>
         </nav>
         <div class="welcome">
-            欢迎您，<?= $_SESSION['username'] ?>
+            欢迎您，<?= htmlspecialchars($_SESSION['username'], ENT_QUOTES, 'UTF-8') ?>
             <a href="logout.php" class="logout-link"><i class="fas fa-sign-out-alt"></i> 退出</a>
         </div>
     </div>
