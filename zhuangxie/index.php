@@ -1,4 +1,7 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 include 'includes/auth.php';
 include 'db.php';
 
@@ -31,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>成都仓劳务费用登记系统 - 登录</title>
+    <title>费用登记系统 - 登录</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -231,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="login-header">
             <i class="fas fa-truck-loading"></i>
             <h1>费用登记系统</h1>
-            <p>专业物流装卸管理平台</p>
+            <p>物流卸货费管理平台</p>
         </div>
         
         <?php if (isset($error)): ?>
@@ -264,7 +267,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </form>
         
         <div class="footer">
-            <p>© <?= date('Y') ?> 成都仓管理系统 | v2.0</p>
+            <p>© <?= date('Y') ?> 管理系统 | v2.0</p>
         </div>
     </div>
 </body>
