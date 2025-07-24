@@ -2,11 +2,13 @@
 include 'includes/auth.php';
 include 'db.php';
 
-if (!isLoggedIn()) {
+if (!checkSessionTimeout() || !isLoggedIn()) {
     redirect('index.php');
 }
 
-$page_title = "控制面板";
+refreshSession();
+
+$page_title = "系统概览 - 管理系统";
 include 'includes/header.php';
 ?>
 
