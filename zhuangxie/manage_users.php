@@ -2,9 +2,11 @@
 include 'includes/auth.php';
 include 'db.php';
 
-if (!isAdmin()) {
+if (!checkSessionTimeout() || !isAdmin()) {
     redirect('dashboard.php');
 }
+
+refreshSession();
 
 // 添加用户
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add'])) {
@@ -53,12 +55,12 @@ include 'includes/header.php';
                         <td><?= $user['records_count'] ?> 条</td>
                         <td>
                             <a href="edit_user.php?id=<?= $user['id'] ?>" 
-                               class="btn-action btn-edit" title="编辑">
+                               class="btn-action btn-action-edit" title="编辑">
                                <i class="fas fa-edit"></i>
                             </a>
                             <?php if ($user['id'] != $_SESSION['user_id']): ?>
                                 <a href="delete_user.php?id=<?= $user['id'] ?>" 
-                                   class="btn-action btn-delete" 
+                                   class="btn-action btn-action-delete" 
                                    title="删除"
                                    onclick="return confirmDelete('用户', <?= $user['records_count'] ?>)">
                                    <i class="fas fa-trash"></i>
