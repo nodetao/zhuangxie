@@ -64,7 +64,7 @@ include 'includes/header.php';
                 <div class="form-group col-md-6">
                     <label for="product_name">商品名称</label>
                     <input type="text" name="product_name" id="product_name" class="form-control" 
-                           required placeholder="例如：iPhone 13, 实木餐桌, 东北大米等">
+                           required placeholder="商品名称">
                 </div>
                 
                 <div class="form-group col-md-6">
@@ -86,13 +86,13 @@ include 'includes/header.php';
                 
                 <div class="form-group col-md-6">
                     <label>费用估算</label>
-                    <input type="text" id="price_calc" value="¥0.00" 
+                    <input type="text" id="price_calc" value="0.00" 
                            class="form-control" readonly>
                 </div>
             </div>
             
-            <div class="form-row">
-                <div class="form-group col-md-12">
+            <div class="form-group">
+                <div class="form-group col-md-8">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> 提交登记
                     </button>
