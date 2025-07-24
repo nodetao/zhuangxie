@@ -2,10 +2,12 @@
 include 'includes/auth.php';
 include 'db.php';
 
-if (!isAdmin()) {
+if (!checkSessionTimeout() || !isAdmin()) {
     $_SESSION['error'] = "无权执行此操作";
     redirect('manage_users.php');
 }
+
+refreshSession();
 
 $user_id = $_GET['id'] ?? 0;
 
