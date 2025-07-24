@@ -10,7 +10,7 @@ if (!isLoggedIn()) {
 $workers = $pdo->query("SELECT * FROM workers")->fetchAll(PDO::FETCH_ASSOC);
 
 // 设置默认日期范围和公司筛选
-$start_date = date('Y-m-d', strtotime('-7 days'));
+$start_date = date('Y-m-01');
 $end_date = date('Y-m-d');
 $selected_worker = 'all'; // 默认选择所有公司
 
@@ -63,7 +63,7 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$page_title = "装卸记录查询";
+$page_title = "记录查询";
 include 'includes/header.php';
 ?>
 
@@ -132,24 +132,28 @@ include 'includes/header.php';
                         <th>数量</th>
                         <th>金额</th>
                         <th>登记人</th>
-                        <?php if (isAdmin()): ?>
-                            <th>操作</th>
-                        <?php endif; ?>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($records as $record): ?>
-                    <tr>
-                        <td><?= $record['record_date'] ?></td>
-                        <td><?= htmlspecialchars($record['product_name']) ?></td>
-                        <td><?= htmlspecialchars($record['category_name']) ?></td>
-                        <td class="company-cell" title="<?= htmlspecialchars($record['worker_name']) ?>">
-                            <?= htmlspecialchars($record['worker_name']) ?>
-                        </td>
-                        <td><?= $record['quantity'] ?></td>
-                        <td>¥<?= number_format($record['total_price'], 2) ?></td>
-                        <td><?= $record['recorded_by'] ?></td>
-                        <?php if (isAdmin()): ?>
+                    <?php if (empty($records)): ?>
+                        <tr>
+                            <td colspan="8" class="text-center">
+                                <i class="fas fa-info-circle"></i> 没有找到符合条件的记录
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($records as $record): ?>
+                        <tr>
+                            <td><?= $record['record_date'] ?></td>
+                            <td><?= htmlspecialchars($record['product_name']) ?></td>
+                            <td><?= htmlspecialchars($record['category_name']) ?></td>
+                            <td class="company-cell" title="<?= htmlspecialchars($record['worker_name']) ?>">
+                                <?= htmlspecialchars($record['worker_name']) ?>
+                            </td>
+                            <td><?= $record['quantity'] ?></td>
+                            <td>¥<?= number_format($record['total_price'], 2) ?></td>
+                            <td><?= $record['recorded_by'] ?></td>
                             <td class="action-buttons">
                                 <a href="edit_record.php?id=<?= $record['id'] ?>" 
                                    class="btn-action btn-action-edit" title="编辑">
@@ -162,15 +166,8 @@ include 'includes/header.php';
                                    <i class="fas fa-trash"></i>
                                 </a>
                             </td>
-                        <?php endif; ?>
-                    </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($records)): ?>
-                        <tr>
-                            <td colspan="<?= isAdmin() ? 8 : 7 ?>" class="text-center">
-                                <i class="fas fa-info-circle"></i> 没有找到符合条件的记录
-                            </td>
                         </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -222,4 +219,14 @@ include 'includes/header.php';
     </div>
 </div>
 
+
 <?php include 'includes/footer.php'; ?>
+
+
+
+
+
+
+
+
+
