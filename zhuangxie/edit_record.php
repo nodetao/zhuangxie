@@ -2,9 +2,11 @@
 include 'includes/auth.php';
 include 'db.php';
 
-if (!isAdmin()) {
-    redirect('dashboard.php');
+if (!checkSessionTimeout() || !isLoggedIn()) {
+    redirect('index.php');
 }
+
+refreshSession();
 
 // 获取记录ID
 $record_id = $_GET['id'] ?? 0;
@@ -19,13 +21,20 @@ if (!$record) {
     redirect('view_records.php');
 }
 
-// 获取所有品类和工人
+// 检查权限：管理员可以编辑所有记录，普通用户只能编辑自己的记录
+if (!isAdmin() && $record['recorded_by'] != $_SESSION['user_id']) {
+    echo "<script>alert('无权限操作'); window.location.href='view_records.php';</script>";
+    exit;
+}
+
+// 获取所有品类和公司
 $categories = $pdo->query("SELECT * FROM categories")->fetchAll(PDO::FETCH_ASSOC);
 $workers = $pdo->query("SELECT * FROM workers")->fetchAll(PDO::FETCH_ASSOC);
 
 // 更新记录
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $date = $_POST['date'];
+    $product_name = $_POST['product_name'];
     $worker_id = $_POST['worker_id'];
     $category_id = $_POST['category_id'];
     $quantity = $_POST['quantity'];
@@ -39,12 +48,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // 更新记录
     $stmt = $pdo->prepare("UPDATE records SET 
                           record_date = ?, 
+                          product_name = ?,
                           worker_id = ?, 
                           category_id = ?, 
                           quantity = ?, 
                           total_price = ?
                           WHERE id = ?");
-    $stmt->execute([$date, $worker_id, $category_id, $quantity, $total_price, $record_id]);
+    $stmt->execute([$date, $product_name, $worker_id, $category_id, $quantity, $total_price, $record_id]);
     
     $_SESSION['success'] = "记录更新成功";
     redirect('view_records.php');
@@ -55,7 +65,7 @@ $breadcrumb = "记录编辑";
 include 'includes/header.php';
 ?>
 
-<h2>编辑装卸记录</h2>
+<h2>更新记录</h2>
 
 <form method="post" class="form-container">
     <div class="form-group">
@@ -63,7 +73,11 @@ include 'includes/header.php';
         <input type="date" name="date" value="<?= $record['record_date'] ?>" required>
     </div>
     <div class="form-group">
-        <label>装卸工人</label>
+        <label>商品名称</label>
+        <input type="text" name="product_name" value="<?= htmlspecialchars($record['product_name']) ?>" required>
+    </div>
+    <div class="form-group">
+        <label>公司</label>
         <select name="worker_id" required>
             <?php foreach ($workers as $worker): ?>
                 <option value="<?= $worker['id'] ?>" <?= $worker['id'] == $record['worker_id'] ? 'selected' : '' ?>>
@@ -93,3 +107,12 @@ include 'includes/header.php';
 </form>
 
 <?php include 'includes/footer.php'; ?>
+
+
+
+
+
+
+
+
+
