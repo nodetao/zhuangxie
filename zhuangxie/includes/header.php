@@ -1,35 +1,38 @@
 <?php
 // ==================== 会话安全设置 ====================
-// 3天有效期（秒）
-$session_duration = 259200; // 60*60*24*3
+// 30天有效期（秒）
+$session_duration = 2592000; // 60*60*24*30
 
-// 设置会话参数
-ini_set('session.gc_maxlifetime', $session_duration);  // 服务器端会话有效期
-ini_set('session.cookie_lifetime', $session_duration); // 浏览器Cookie有效期
+// 设置会话参数（在session_start之前）
+ini_set('session.gc_maxlifetime', $session_duration);
+ini_set('session.cookie_lifetime', $session_duration);
 
-// 降低垃圾回收概率（减少会话被提前清理的机会）
+// 降低垃圾回收概率
 ini_set('session.gc_probability', 1);
-ini_set('session.gc_divisor', 1000);  // 0.1%的概率触发GC
+ini_set('session.gc_divisor', 1000);
 
-// 自定义会话存储路径（避免共享主机清理）
+// 自定义会话存储路径
 $customSessionPath = __DIR__ . '/sessions';
 if (!is_dir($customSessionPath)) {
-    mkdir($customSessionPath, 0700, true);
+    mkdir($customSessionPath, 0755, true); // 改为0755权限
 }
 ini_set('session.save_path', $customSessionPath);
 
-// 增强会话安全设置
-ini_set('session.cookie_secure', true);    // 仅通过HTTPS传输
-ini_set('session.cookie_httponly', true);  // 禁止JavaScript访问
-ini_set('session.cookie_samesite', 'Lax'); // 防止CSRF攻击
-ini_set('session.use_strict_mode', true);  // 防止会话固定攻击
+// 设置会话cookie参数
+session_set_cookie_params([
+    'lifetime' => $session_duration,
+    'path' => '/',
+    'domain' => '',
+    'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on', // 自动检测HTTPS
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
 
 // 启动会话
 session_start();
 
-// 检查会话是否过期（3天无活动）
+// 检查会话是否过期
 if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $session_duration)) {
-    // 会话过期，销毁会话并重定向
     session_unset();
     session_destroy();
     
@@ -55,7 +58,7 @@ $_SESSION['last_activity'] = time();
 // 定期更新会话ID（每24小时）
 if (!isset($_SESSION['created'])) {
     $_SESSION['created'] = time();
-} elseif (time() - $_SESSION['created'] > 86400) { // 24小时
+} elseif (time() - $_SESSION['created'] > 86400) {
     session_regenerate_id(true);
     $_SESSION['created'] = time();
 }
@@ -533,7 +536,7 @@ $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
         // 每5分钟发送一次心跳请求（300000毫秒）
         document.addEventListener('DOMContentLoaded', function() {
             function keepSessionAlive() {
-                fetch('/session-keepalive.php', {
+                fetch('session-keepalive.php', {
                     method: 'HEAD',
                     credentials: 'include' // 包含cookie
                 }).catch(error => {
@@ -570,7 +573,7 @@ $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
             <?php endif; ?>
         </nav>
         <div class="welcome">
-            欢迎您，<?= htmlspecialchars($_SESSION['username'], ENT_QUOTES, 'UTF-8') ?>
+            欢迎您，<a href="profile.php" style="color: #ffcccc; text-decoration: none;"><?= htmlspecialchars($_SESSION['username'], ENT_QUOTES, 'UTF-8') ?></a>
             <a href="logout.php" class="logout-link"><i class="fas fa-sign-out-alt"></i> 退出</a>
         </div>
     </div>
@@ -578,3 +581,10 @@ $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
 
 <!-- 页面内容容器开始 -->
 <div class="container">
+
+
+
+
+
+
+

@@ -1,16 +1,22 @@
 <?php
+// 只在会话未启动时才配置和启动会话
 if (session_status() === PHP_SESSION_NONE) {
-    // 设置Session配置
-    ini_set('session.gc_maxlifetime', 86400); // 24小时
-    ini_set('session.cookie_lifetime', 86400); // 24小时
+    // 30天有效期
+    $session_duration = 2592000;
+    
+    // 设置会话cookie参数
     session_set_cookie_params([
-        'lifetime' => 86400, // 24小时
+        'lifetime' => $session_duration,
         'path' => '/',
         'domain' => '',
-        'secure' => false, // 如果使用HTTPS设为true
+        'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
         'httponly' => true,
         'samesite' => 'Lax'
     ]);
+    
+    ini_set('session.gc_maxlifetime', $session_duration);
+    ini_set('session.cookie_lifetime', $session_duration);
+    
     session_start();
 }
 
@@ -32,18 +38,17 @@ function redirect($url) {
     }
 }
 
-// 刷新Session过期时间
 function refreshSession() {
     if (isLoggedIn()) {
         $_SESSION['last_activity'] = time();
     }
 }
 
-// 检查Session是否过期
 function checkSessionTimeout() {
+    $session_duration = 2592000; // 30天
     if (isset($_SESSION['last_activity'])) {
         $inactive = time() - $_SESSION['last_activity'];
-        if ($inactive >= 86400) { // 24小时
+        if ($inactive >= $session_duration) {
             session_destroy();
             return false;
         }
@@ -52,5 +57,10 @@ function checkSessionTimeout() {
     return true;
 }
 ?>
+
+
+
+
+
 
 
